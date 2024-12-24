@@ -3,9 +3,14 @@ import React from "react";
 import { Colors } from "@/components/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useOAuth } from "@clerk/clerk-expo";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const LoginScreen = () => {
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const data = useQuery(api.users.getAllUsers);
+
+  // console.log(JSON.stringify(data, null, 2));
 
   const handleGoogleLogin = async () => {
     try {
