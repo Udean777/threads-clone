@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,7 +26,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="feed"
         options={{
-          headerShown: false,
+          // headerShown: false,
           title: "Feed",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
@@ -34,6 +34,11 @@ const TabsLayout = () => {
               color={color}
               size={size}
             />
+          ),
+          headerRight: () => (
+            <TouchableOpacity onPress={() => signOut()}>
+              <Text style={styles.logoutText}>Log out</Text>
+            </TouchableOpacity>
           ),
         }}
       />
@@ -63,7 +68,7 @@ const TabsLayout = () => {
           tabPress: (e) => {
             e.preventDefault();
             Haptics.selectionAsync();
-            router.push("/create");
+            router.push("/(auth)/(modal)/create");
           },
         }}
       />
@@ -106,7 +111,10 @@ const styles = StyleSheet.create({
   createIconContainer: {
     backgroundColor: Colors.itemBackground,
     borderRadius: 8,
-    padding: 6,
+    width: 50,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
