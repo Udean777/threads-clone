@@ -30,7 +30,7 @@ const LoginScreen = () => {
           source={require("@/assets/images/threads-logo-black.png")}
           style={styles.loginBtnImg}
         />
-        <Text style={styles.title}>Threads (Lite).</Text>
+        <Text style={styles.title}>Threads</Text>
       </View>
       <View style={styles.btnContainer}>
         <TouchableOpacity style={styles.btnLogin} onPress={handleGoogleLogin}>
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     // backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   title: {
-    fontSize: 30,
+    fontSize: 20,
     fontFamily: "DMSans_700Bold",
     // textAlign: "center",
     color: "#333",

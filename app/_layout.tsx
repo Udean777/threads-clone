@@ -11,6 +11,7 @@ import {
 import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -46,9 +47,9 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkLoaded>
-        <ConvexProvider client={convex}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <InitialLayout />
-        </ConvexProvider>
+        </ConvexProviderWithClerk>
       </ClerkLoaded>
     </ClerkProvider>
   );
