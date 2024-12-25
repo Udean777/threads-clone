@@ -4,6 +4,7 @@ import {
   InputAccessoryView,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +20,8 @@ import { router, Stack } from "expo-router";
 import { FontAwesome6, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Fonts } from "@/constants/Fonts";
 import { Colors } from "@/constants/Colors";
+import { ImagePickerAsset } from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker";
 
 type ThreadComposerProps = {
   isPreview?: boolean;
@@ -32,18 +35,23 @@ const ThreadComposer = ({
   threadId,
 }: ThreadComposerProps) => {
   const [threadContent, setThreadContent] = useState("");
-  const [websiteUrl, setWebsiteUrl] = useState<string | null>(null);
-  const [mediaFiles, setMediaFiles] = useState<string[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<ImagePicker.ImagePickerAsset[]>(
+    []
+  );
 
   const { userPrfl } = useUserProfile();
 
   const addThread = useMutation(api.messages.addThread);
+  const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
 
   const handleSubmitThreads = async () => {
+    const mediaIds = await Promise.all(mediaFiles.map(uploadMediaThread));
+    console.log("Media images", mediaIds);
+
     addThread({
       threadId,
       content: threadContent,
-      // mediaFiles,
+      mediaFiles: mediaIds,
     });
 
     setThreadContent("");
@@ -74,6 +82,46 @@ const ThreadComposer = ({
         style: "cancel",
       },
     ]);
+  };
+
+  const pickImage = async (source: "camera" | "library") => {
+    const options: ImagePicker.ImagePickerOptions = {
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+    };
+
+    let result;
+
+    if (source === "library") {
+      result = await ImagePicker.launchImageLibraryAsync(options);
+    } else {
+      result = await ImagePicker.launchCameraAsync(options);
+    }
+
+    if (!result.canceled) {
+      setMediaFiles([result.assets[0], ...mediaFiles]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setMediaFiles(mediaFiles.filter((_, i) => i !== index));
+  };
+
+  const uploadMediaThread = async (image: ImagePickerAsset) => {
+    const uploadUrl = await generateUploadUrl();
+
+    const response = await fetch(image!.uri);
+    const blob = await response.blob();
+
+    const result = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "Content-Type": image!.mimeType! },
+      body: blob,
+    });
+    const { storageId } = await result.json();
+
+    return storageId;
   };
 
   return (
@@ -116,11 +164,32 @@ const ThreadComposer = ({
             autoFocus={!isPreview}
             inputAccessoryViewID="123456"
           />
+          {mediaFiles.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {mediaFiles.map((file, index) => (
+                <View style={styles.mediaContainer} key={file.assetId}>
+                  <Image source={{ uri: file.uri }} style={styles.mediaImage} />
+                  <TouchableOpacity
+                    style={styles.deleteIconContainer}
+                    onPress={() => removeImage(index)}
+                  >
+                    <Ionicons name="close" size={24} color={"#fff"} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
           <View style={styles.iconRow}>
-            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => pickImage("library")}
+            >
               <Ionicons name="images-outline" size={24} color={Colors.border} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => pickImage("camera")}
+            >
               <Ionicons name="camera-outline" size={24} color={Colors.border} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton}>

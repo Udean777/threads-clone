@@ -25,3 +25,9 @@ export const addThread = mutation({
     }
   },
 });
+
+export const generateUploadUrl = mutation(async (ctx) => {
+  await getCurrentUserOrThrow(ctx);
+
+  return await ctx.storage.generateUploadUrl();
+});
