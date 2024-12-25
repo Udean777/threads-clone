@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "threads-clone",
+    "name": "Threads Lite",
     "slug": "threads-clone",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -35,7 +35,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "MahCode",
+          "project": "threads-lite",
+          "url": "https://sentry.io/"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
