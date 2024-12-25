@@ -32,7 +32,7 @@ const UserProfile = ({ userId }: { userId?: String }) => {
           <Text style={styles.username}>@{profileData?.username}</Text>
         </View>
         <Image
-          source={{ uri: profileData?.imageUrl + "?" + new Date().getTime() }}
+          source={{ uri: profileData?.imageUrl as string }}
           style={styles.profilePicture}
         />
       </View>
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.submit,
+    backgroundColor: Colors.blue,
   },
   solidBtnText: {
     color: "#fff",

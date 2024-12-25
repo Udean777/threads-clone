@@ -13,6 +13,9 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Fonts } from "@/constants/Fonts";
 import { Colors } from "@/constants/Colors";
+import { ImagePickerAsset } from "expo-image-picker";
+import * as ImagePicker from "expo-image-picker";
+import * as Sentry from "@sentry/react-native";
 
 const Page = () => {
   const {
@@ -29,7 +32,13 @@ const Page = () => {
   const [bio, setBio] = useState(_bio);
   const [link, setLink] = useState(_link);
   const [image, setImage] = useState(imageUrl);
+  const [selectedImage, setSelectedImage] = useState<ImagePickerAsset | null>(
+    null
+  );
+
   const updateUser = useMutation(api.users.updateUser);
+  const generateUploadUrl = useMutation(api.users.generateUploadUrl);
+  const updateImage = useMutation(api.users.updateImage);
 
   const onSubmit = async () => {
     await updateUser({
@@ -38,7 +47,53 @@ const Page = () => {
       websiteUrl: link,
     });
 
+    Sentry.captureEvent({
+      message: "User Profile updated",
+      extra: {
+        bio,
+        link,
+      },
+    });
+
+    if (selectedImage) {
+      await updateProfilePicture();
+    }
+
     router.dismiss();
+  };
+
+  const updateProfilePicture = async () => {
+    const upUrl = await generateUploadUrl();
+
+    const response = await fetch(selectedImage!.uri);
+    const blob = await response.blob();
+
+    const res = await fetch(upUrl, {
+      method: "POST",
+      body: blob,
+      headers: {
+        "Content-Type": selectedImage!.mimeType!,
+      },
+    });
+
+    console.log("updateProfilePicture result: ", res);
+
+    const { storageId } = await res.json();
+    console.log("Storage id", storageId);
+
+    return updateImage({ storageId, _id: userId as Id<"users"> });
+  };
+
+  const pickImage = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    if (!res.canceled) {
+      setSelectedImage(res.assets[0]);
+    }
   };
 
   //   console.log(JSON.stringify({ bio, link, userId, imageUrl }, null, 2));
@@ -53,7 +108,13 @@ const Page = () => {
           ),
         }}
       />
-      <Image source={{ uri: image }} style={styles.image} />
+      <TouchableOpacity onPress={pickImage}>
+        {selectedImage ? (
+          <Image source={{ uri: selectedImage.uri }} style={styles.image} />
+        ) : (
+          <Image source={{ uri: image }} style={styles.image} />
+        )}
+      </TouchableOpacity>
       <View style={styles.section}>
         <Text style={styles.label}>Bio</Text>
         <TextInput
@@ -107,7 +168,7 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontFamily: Fonts.DM_BOLD,
-    color: Colors.submit,
+    color: Colors.blue,
     fontSize: 16,
   },
 });

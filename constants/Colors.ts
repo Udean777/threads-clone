@@ -4,15 +4,5 @@ export const Colors = {
   background: "#FDF8FF",
   border: "#acacac",
   itemBackground: "#f5f5f5",
-  blue: "#09bcff",
-
-  ...Platform.select({
-    ios: {
-      submit: PlatformColor("systemBlueColor"),
-    },
-    android: {
-      submit: PlatformColor("@android:color/system_primary_light"),
-    },
-    default: { submit: "black" },
-  }),
+  blue: "#0097ff",
 };
