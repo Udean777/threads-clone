@@ -5,7 +5,7 @@ import {
   query,
   QueryCtx,
 } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 
 // export const getAllUsers = query({
 //     args: {},
@@ -41,10 +41,12 @@ export const getUserByClerkId = query({
     clerkId: v.optional(v.string()),
   },
   handler: async (context, args) => {
-    return await context.db
+    const user = await context.db
       .query("users")
       .filter((q) => q.eq(q.field("clerkId"), args.clerkId))
       .unique();
+
+    return await getUserWithImageUrl(context, user);
   },
 });
 
@@ -53,7 +55,9 @@ export const getUserById = query({
     userId: v.id("users"),
   },
   handler: async (context, args) => {
-    return await getUserWithImageUrl(context, args.userId);
+    const user = await context.db.get(args.userId);
+
+    return await getUserWithImageUrl(context, user);
   },
 });
 
@@ -93,9 +97,10 @@ export const updateImage = mutation({
 });
 
 // Reusable method here
-const getUserWithImageUrl = async (context: QueryCtx, userId: Id<"users">) => {
-  const user = await context.db.get(userId);
-
+const getUserWithImageUrl = async (
+  context: QueryCtx,
+  user: Doc<"users"> | null
+) => {
   if (!user?.imageUrl || user.imageUrl.startsWith("http")) {
     return user;
   }

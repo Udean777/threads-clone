@@ -106,6 +106,10 @@ const Page = () => {
               <Text style={styles.doneText}>Done</Text>
             </TouchableOpacity>
           ),
+          headerTitleStyle: {
+            fontFamily: Fonts.DM_BOLD,
+            fontSize: 20,
+          },
         }}
       />
       <TouchableOpacity onPress={pickImage}>
