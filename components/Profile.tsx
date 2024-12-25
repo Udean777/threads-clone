@@ -11,7 +11,7 @@ import useUserProfile from "@/hooks/useUserProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "@clerk/clerk-expo";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import UserProfile from "./UserProfile";
 import { Colors } from "@/constants/Colors";
 import Tabs from "./Tabs";
@@ -40,14 +40,18 @@ const Profile = ({ userId, showBackBtn = false }: ProfileProps) => {
       <FlatList
         data={results}
         renderItem={({ item }) => (
-          <Thread
-            thread={
-              item as Doc<"messages"> & {
-                creator: Doc<"users">;
-                isLiked: boolean;
-              }
-            }
-          />
+          <Link href={`/(auth)/(tabs)/feed/${item._id}`} asChild>
+            <TouchableOpacity>
+              <Thread
+                thread={
+                  item as Doc<"messages"> & {
+                    creator: Doc<"users">;
+                    isLiked: boolean;
+                  }
+                }
+              />
+            </TouchableOpacity>
+          </Link>
         )}
         ListHeaderComponent={
           <>

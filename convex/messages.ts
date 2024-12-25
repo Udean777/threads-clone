@@ -122,6 +122,26 @@ export const likeThread = mutation({
   },
 });
 
+export const getThreadById = query({
+  args: {
+    threadId: v.id("messages"),
+  },
+  handler: async (context, args) => {
+    const thread = await context.db.get(args.threadId);
+
+    if (!thread) return null;
+
+    const creator = await getMessageCreator(context, thread.userId);
+    const mediaUrls = await getMediaUrls(context, thread.mediaFiles);
+
+    return {
+      ...thread,
+      mediaFiles: mediaUrls,
+      creator,
+    };
+  },
+});
+
 const getMessageCreator = async (context: QueryCtx, userId: Id<"users">) => {
   const user = await context.db.get(userId);
 

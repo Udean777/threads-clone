@@ -62,7 +62,9 @@ const Thread = ({
       <View style={{ flex: 1 }}>
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.username}>{creator.username}</Text>
+            <Link href={`/feed/profile/${creator?._id}`} asChild>
+              <Text style={styles.username}>{creator?.username}</Text>
+            </Link>
             <Text style={styles.timestamp}>
               {new Date(thread._creationTime).toLocaleString()}
             </Text>
