@@ -1,14 +1,11 @@
 import {
-  Button,
   FlatList,
   Image,
   RefreshControl,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import React, { useState } from "react";
-import * as Sentry from "@sentry/react-native";
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Colors } from "@/constants/Colors";
@@ -16,6 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ThreadComposer from "@/components/ThreadComposer";
 import Thread from "@/components/Thread";
 import { Doc } from "@/convex/_generated/dataModel";
+import { useNavigation } from "expo-router";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useIsFocused } from "@react-navigation/native";
 
 const Page = () => {
   const [refresh, setRefresh] = useState(false);
@@ -39,12 +44,51 @@ const Page = () => {
     }, 2000);
   };
 
+  // Animation for bottomtabs here...
+  // const navigation = useNavigation();
+  // const scrollOffset = useSharedValue(0);
+  // const tabBarHeight = useBottomTabBarHeight();
+  // const isFocused = useIsFocused();
+
+  // const updateTabBar = () => {
+  //   let newMarginBottom = 0;
+  //   if (scrollOffset.value >= 0 && scrollOffset.value <= tabBarHeight) {
+  //     newMarginBottom = -scrollOffset.value;
+  //   } else if (scrollOffset.value > tabBarHeight) {
+  //     newMarginBottom = -tabBarHeight;
+  //   }
+
+  //   navigation.getParent()?.setOptions({
+  //     tabBarStyle: {
+  //       marginBottom: newMarginBottom,
+  //     },
+  //   });
+  // };
+
+  // const scrollHandler = useAnimatedScrollHandler({
+  //   onScroll: (event) => {
+  //     if (isFocused) {
+  //       scrollOffset.value = event.contentOffset.y;
+  //       runOnJS(updateTabBar)();
+  //     }
+  //   },
+  // });
+
   return (
-    <FlatList
+    <Animated.FlatList
+      // onScroll={scrollHandler}
+      // scrollEventThrottle={16}
       data={results}
       keyExtractor={(item) => item._id}
       renderItem={({ item }) => (
-        <Thread thread={item as Doc<"messages"> & { creator: Doc<"users"> }} />
+        <Thread
+          thread={
+            item as Doc<"messages"> & {
+              creator: Doc<"users">;
+              isLiked: boolean;
+            }
+          }
+        />
       )}
       onEndReached={onLoadMore}
       refreshControl={

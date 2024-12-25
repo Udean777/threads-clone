@@ -34,6 +34,7 @@ export const getThreads = query({
     userId: v.optional(v.id("users")),
   },
   handler: async (context, args) => {
+    const currentUser = await getCurrentUserOrThrow(context);
     let threads;
 
     if (args.userId) {
@@ -53,10 +54,25 @@ export const getThreads = query({
     const msgWithCreator = await Promise.all(
       threads.page.map(async (thread) => {
         const creator = await getMessageCreator(context, thread.userId);
+        const mediaUrls = await getMediaUrls(context, thread.mediaFiles);
+
+        // Check if current user liked this thread
+        let isLiked = false;
+        if (currentUser) {
+          const like = await context.db
+            .query("likes")
+            .withIndex("by_user_and_thread", (q) =>
+              q.eq("userId", currentUser._id).eq("threadId", thread._id)
+            )
+            .unique();
+          isLiked = !!like;
+        }
 
         return {
           ...thread,
+          mediaFiles: mediaUrls,
           creator,
+          isLiked,
         };
       })
     );
@@ -65,6 +81,44 @@ export const getThreads = query({
       ...threads,
       page: msgWithCreator,
     };
+  },
+});
+
+export const likeThread = mutation({
+  args: {
+    threadId: v.id("messages"),
+  },
+  handler: async (context, args) => {
+    const user = await getCurrentUserOrThrow(context);
+
+    // Cek apakah user sudah like thread ini
+    const existingLike = await context.db
+      .query("likes")
+      .filter((q) => q.eq(q.field("userId"), user._id))
+      .filter((q) => q.eq(q.field("threadId"), args.threadId))
+      .first();
+
+    const thread = await context.db.get(args.threadId);
+    if (!thread) return;
+
+    if (existingLike) {
+      // Unlike: Hapus record like dan kurangi counter
+      await context.db.delete(existingLike._id);
+      await context.db.patch(args.threadId, {
+        likeCount: Math.max(0, (thread.likeCount || 0) - 1),
+      });
+      return false;
+    } else {
+      // Like: Tambah record like dan tambah counter
+      await context.db.insert("likes", {
+        userId: user._id,
+        threadId: args.threadId,
+      });
+      await context.db.patch(args.threadId, {
+        likeCount: (thread.likeCount || 0) + 1,
+      });
+      return true;
+    }
   },
 });
 
@@ -83,8 +137,28 @@ const getMessageCreator = async (context: QueryCtx, userId: Id<"users">) => {
   };
 };
 
-export const generateUploadUrl = mutation(async (ctx) => {
-  await getCurrentUserOrThrow(ctx);
+export const generateUploadUrl = mutation(async (context) => {
+  await getCurrentUserOrThrow(context);
 
-  return await ctx.storage.generateUploadUrl();
+  return await context.storage.generateUploadUrl();
 });
+
+const getMediaUrls = async (
+  context: QueryCtx,
+  mediaFiles: string[] | undefined
+) => {
+  if (!mediaFiles || mediaFiles.length === 0) {
+    return [];
+  }
+
+  const urlPromises = mediaFiles.map((file) =>
+    context.storage.getUrl(file as Id<"_storage">)
+  );
+  const results = await Promise.allSettled(urlPromises);
+  return results
+    .filter(
+      (result): result is PromiseFulfilledResult<string> =>
+        result.status === "fulfilled"
+    )
+    .map((result) => result.value);
+};

@@ -1,14 +1,24 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import React, { useState } from "react";
 import { Doc } from "@/convex/_generated/dataModel";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
+import { Link } from "expo-router";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const Thread = ({
   thread,
 }: {
-  thread: Doc<"messages"> & { creator: Doc<"users"> };
+  thread: Doc<"messages"> & { creator: Doc<"users">; isLiked: boolean };
 }) => {
   const {
     content,
@@ -17,9 +27,34 @@ const Thread = ({
     commentCount,
     retweetCount,
     creator,
+    isLiked,
   } = thread;
 
-  //   console.log(creator.imageUrl);
+  const [isLoading, setIsLoading] = useState(false);
+  const [localLikeCount, setLocalLikeCount] = useState(likeCount);
+  const [localIsLiked, setLocalIsLiked] = useState<boolean | null>(isLiked);
+  const toggleLikeMutation = useMutation(api.messages.likeThread);
+
+  const handleToggleLike = async () => {
+    if (isLoading) return;
+
+    try {
+      setIsLoading(true);
+
+      const originalLikeCount = localLikeCount;
+
+      const isNowLiked = await toggleLikeMutation({ threadId: thread._id });
+
+      setLocalIsLiked(isNowLiked);
+      setLocalLikeCount(
+        isNowLiked ? originalLikeCount + 1 : originalLikeCount - 1
+      );
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -39,10 +74,36 @@ const Thread = ({
           />
         </View>
         <Text style={styles.content}>{content}</Text>
+        {mediaFiles && mediaFiles.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.mediaContainer}
+          >
+            {mediaFiles.map((imageUrl, index) => (
+              <Link
+                href={`/(auth)/(modal)/image/${encodeURIComponent(imageUrl)}?threadId=${thread._id}&likeCount=${likeCount}&commentCount=${commentCount}&retweetCount=${retweetCount}`}
+                key={index}
+                asChild
+              >
+                <TouchableOpacity key={index}>
+                  <Image source={{ uri: imageUrl }} style={styles.mediaImage} />
+                </TouchableOpacity>
+              </Link>
+            ))}
+          </ScrollView>
+        )}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
-            <Ionicons name="heart-outline" size={24} color="black" />
-            <Text style={styles.actionText}>{likeCount}</Text>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={handleToggleLike}
+          >
+            <Ionicons
+              name={localIsLiked ? "heart" : "heart-outline"}
+              size={24}
+              color={localIsLiked ? "red" : "black"}
+            />
+            <Text style={styles.actionText}>{localLikeCount}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
             <Ionicons name="chatbubble-outline" size={24} color="black" />

@@ -1,5 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
-import {v} from "convex/values";
+import { v } from "convex/values";
 
 export const User = {
   email: v.string(),
@@ -16,7 +16,7 @@ export const User = {
 };
 
 export const Message = {
-  userId: v.id('users'), // Foreign key to users table
+  userId: v.id("users"), // Foreign key to users table
   threadId: v.optional(v.string()),
   content: v.string(),
   likeCount: v.number(), // Default value 0
@@ -26,9 +26,19 @@ export const Message = {
   websiteUrl: v.optional(v.string()), // Optional website URL
 };
 
+export const Like = {
+  userId: v.id("users"),
+  threadId: v.id("messages"),
+};
+
 export default defineSchema({
-  users: defineTable(User).index('byClerkId', ['clerkId']).searchIndex('searchUsers', {
-    searchField: 'username',
-  }),
+  users: defineTable(User)
+    .index("byClerkId", ["clerkId"])
+    .searchIndex("searchUsers", {
+      searchField: "username",
+    }),
   messages: defineTable(Message),
+  likes: defineTable(Like)
+    .index("by_user_and_thread", ["userId", "threadId"])
+    .index("by_thread", ["threadId"]),
 });

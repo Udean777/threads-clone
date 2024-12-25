@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-import { Id } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import useUserProfile from "@/hooks/useUserProfile";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -15,6 +15,9 @@ import { router } from "expo-router";
 import UserProfile from "./UserProfile";
 import { Colors } from "@/constants/Colors";
 import Tabs from "./Tabs";
+import { usePaginatedQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import Thread from "./Thread";
 
 type ProfileProps = {
   showBackBtn?: boolean;
@@ -26,11 +29,26 @@ const Profile = ({ userId, showBackBtn = false }: ProfileProps) => {
   const { top } = useSafeAreaInsets();
   const { signOut } = useAuth();
 
+  const { results, status, loadMore } = usePaginatedQuery(
+    api.messages.getThreads,
+    { userId: userId || userPrfl?._id },
+    { initialNumItems: 5 }
+  );
+
   return (
     <View style={[styles.container, { paddingTop: top }]}>
       <FlatList
-        data={[]}
-        renderItem={() => <Text>Hello</Text>}
+        data={results}
+        renderItem={({ item }) => (
+          <Thread
+            thread={
+              item as Doc<"messages"> & {
+                creator: Doc<"users">;
+                isLiked: boolean;
+              }
+            }
+          />
+        )}
         ListHeaderComponent={
           <>
             <View style={styles.header}>
