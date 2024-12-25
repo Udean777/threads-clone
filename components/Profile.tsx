@@ -4,7 +4,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
 } from "react-native";
 import React from "react";
 import { Id } from "@/convex/_generated/dataModel";
