@@ -6,6 +6,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Fonts } from "@/constants/Fonts";
 import { Colors } from "@/constants/Colors";
 import useUserProfile from "@/hooks/useUserProfile";
+import { Link } from "expo-router";
 
 const UserProfile = ({ userId }: { userId?: String }) => {
   const profileData = useQuery(api.users.getUserById, {
@@ -13,6 +14,11 @@ const UserProfile = ({ userId }: { userId?: String }) => {
   });
   const { userPrfl } = useUserProfile();
   const isMe = userId === userPrfl?._id;
+  const editParams = `bio=${
+    profileData?.bio ? encodeURIComponent(profileData?.bio) : ""
+  }&link=${profileData?.websiteUrl ? encodeURIComponent(profileData?.websiteUrl) : ""}&userId=${
+    profileData?._id
+  }&imageUrl=${profileData?.imageUrl ? encodeURIComponent(profileData?.imageUrl) : ""}`;
 
   //   console.log(JSON.stringify(profileData, null, 2));
 
@@ -39,9 +45,11 @@ const UserProfile = ({ userId }: { userId?: String }) => {
       <View style={styles.btnRow}>
         {isMe ? (
           <>
-            <TouchableOpacity style={styles.btn}>
-              <Text style={styles.btnText}>Edit Profile</Text>
-            </TouchableOpacity>
+            <Link href={`/edit_profile?${editParams}`} asChild>
+              <TouchableOpacity style={styles.btn}>
+                <Text style={styles.btnText}>Edit Profile</Text>
+              </TouchableOpacity>
+            </Link>
             <TouchableOpacity style={styles.btn}>
               <Text style={styles.btnText}>Share Profile</Text>
             </TouchableOpacity>
@@ -119,7 +127,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#09bcff",
+    backgroundColor: Colors.submit,
   },
   solidBtnText: {
     color: "#fff",

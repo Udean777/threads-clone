@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 const AuthLayout = () => {
@@ -15,13 +15,26 @@ const AuthLayout = () => {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
-        name="(modal)"
+        name="(modal)/create"
         options={{
           presentation: "modal",
           title: "New Thread",
           headerRight: () => (
             <TouchableOpacity>
               <Ionicons name="ellipsis-horizontal-circle" size={24} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="(modal)/edit_profile"
+        options={{
+          presentation: "modal",
+          title: "Edit Profile",
+          headerTitleAlign: "center",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.dismiss()}>
+              <Ionicons name="close" size={24} />
             </TouchableOpacity>
           ),
         }}
