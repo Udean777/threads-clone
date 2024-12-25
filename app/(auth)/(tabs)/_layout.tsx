@@ -26,7 +26,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="feed"
         options={{
-          // headerShown: false,
+          headerShown: false,
           title: "Feed",
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons

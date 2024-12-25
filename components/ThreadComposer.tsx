@@ -125,140 +125,166 @@ const ThreadComposer = ({
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{
-        flex: 1,
-      }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <TouchableOpacity
+      style={[
+        isPreview && {
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          pointerEvents: "box-only",
+        },
+        {
+          flex: 1,
+        },
+      ]}
+      onPress={() => router.push("/(auth)/(modal)/create")}
     >
-      <Stack.Screen
-        options={{
-          headerLeft: () => (
-            <TouchableOpacity onPress={handleCancel}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-          ),
-          headerTitleAlign: "center",
-          headerTitleStyle: {
-            fontFamily: Fonts.DM_BOLD,
-            fontSize: 20,
-          },
-        }}
-      />
-
-      <View style={styles.topRow}>
-        <Image
-          source={{ uri: userPrfl?.imageUrl as string }}
-          style={styles.avatar}
-        />
-        <View style={styles.centerContainer}>
-          <Text style={styles.username}>{userPrfl?.username}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={
-              isReply ? "Reply to a thread" : "What's you gonna make?"
-            }
-            value={threadContent}
-            onChangeText={setThreadContent}
-            multiline
-            autoFocus={!isPreview}
-            inputAccessoryViewID="123456"
-          />
-          {mediaFiles.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {mediaFiles.map((file, index) => (
-                <View style={styles.mediaContainer} key={file.assetId}>
-                  <Image source={{ uri: file.uri }} style={styles.mediaImage} />
-                  <TouchableOpacity
-                    style={styles.deleteIconContainer}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Ionicons name="close" size={24} color={"#fff"} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-          <View style={styles.iconRow}>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => pickImage("library")}
-            >
-              <Ionicons name="images-outline" size={24} color={Colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => pickImage("camera")}
-            >
-              <Ionicons name="camera-outline" size={24} color={Colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <MaterialIcons name="gif" size={24} color={Colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="mic-outline" size={24} color={Colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <FontAwesome6 name="hashtag" size={24} color={Colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons
-                name="stats-chart-outline"
-                size={24}
-                color={Colors.border}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={[styles.cancelButton, { opacity: isPreview ? 0 : 1 }]}
-          onPress={removeThread}
-        >
-          <Ionicons name="close" size={24} color={Colors.border} />
-        </TouchableOpacity>
-      </View>
-      {/* Custom Input Accessory for Android */}
-      {Platform.OS === "android" ? (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            padding: 12,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: Colors.border,
-            backgroundColor: "#f8f8f8",
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <Stack.Screen
+          options={{
+            headerLeft: () => (
+              <TouchableOpacity onPress={handleCancel}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            ),
+            headerTitleAlign: "center",
+            headerTitleStyle: {
+              fontFamily: Fonts.DM_BOLD,
+              fontSize: 20,
+            },
           }}
-        >
-          <Text style={styles.keyboardAccessoryText}>
-            {isReply
-              ? "Everyone can reply and quote"
-              : " Profiles that you follow can reply and quote"}
-          </Text>
+        />
+
+        <View style={styles.topRow}>
+          <Image
+            source={{ uri: userPrfl?.imageUrl as string }}
+            style={styles.avatar}
+          />
+          <View style={styles.centerContainer}>
+            <Text style={styles.username}>{userPrfl?.username}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={
+                isReply ? "Reply to a thread" : "What's you gonna make?"
+              }
+              value={threadContent}
+              onChangeText={setThreadContent}
+              multiline
+              autoFocus={!isPreview}
+              inputAccessoryViewID="123456"
+            />
+            {mediaFiles.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {mediaFiles.map((file, index) => (
+                  <View style={styles.mediaContainer} key={file.assetId}>
+                    <Image
+                      source={{ uri: file.uri }}
+                      style={styles.mediaImage}
+                    />
+                    <TouchableOpacity
+                      style={styles.deleteIconContainer}
+                      onPress={() => removeImage(index)}
+                    >
+                      <Ionicons name="close" size={24} color={"#fff"} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <View style={styles.iconRow}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => pickImage("library")}
+              >
+                <Ionicons
+                  name="images-outline"
+                  size={24}
+                  color={Colors.border}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => pickImage("camera")}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={24}
+                  color={Colors.border}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <MaterialIcons name="gif" size={24} color={Colors.border} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Ionicons name="mic-outline" size={24} color={Colors.border} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <FontAwesome6 name="hashtag" size={24} color={Colors.border} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton}>
+                <Ionicons
+                  name="stats-chart-outline"
+                  size={24}
+                  color={Colors.border}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
           <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleSubmitThreads}
+            style={[styles.cancelButton, { opacity: isPreview ? 0 : 1 }]}
+            onPress={removeThread}
           >
-            <Text style={styles.submitButtonText}>Post</Text>
+            <Ionicons name="close" size={24} color={Colors.border} />
           </TouchableOpacity>
         </View>
-      ) : (
-        <InputAccessoryView nativeID="123456">
-          <View style={styles.keyboardAccessory}>
-            <Text style={styles.keyboardAccessoryText}>
-              {isReply
-                ? "Everyone can reply and quote"
-                : " Profiles that you follow can reply and quote"}
-            </Text>
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmitThreads}
+        {/* Custom Input Accessory for Android */}
+        {Platform.OS === "android" ? (
+          isPreview ? null : (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 12,
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: Colors.border,
+                backgroundColor: "#f8f8f8",
+              }}
             >
-              <Text style={styles.submitButtonText}>Post</Text>
-            </TouchableOpacity>
-          </View>
-        </InputAccessoryView>
-      )}
-    </KeyboardAvoidingView>
+              <Text style={styles.keyboardAccessoryText}>
+                {isReply
+                  ? "Everyone can reply and quote"
+                  : " Profiles that you follow can reply and quote"}
+              </Text>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleSubmitThreads}
+              >
+                <Text style={styles.submitButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        ) : (
+          <InputAccessoryView nativeID="123456">
+            <View style={styles.keyboardAccessory}>
+              <Text style={styles.keyboardAccessoryText}>
+                {isReply
+                  ? "Everyone can reply and quote"
+                  : " Profiles that you follow can reply and quote"}
+              </Text>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleSubmitThreads}
+              >
+                <Text style={styles.submitButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+          </InputAccessoryView>
+        )}
+      </KeyboardAvoidingView>
+    </TouchableOpacity>
   );
 };
 
