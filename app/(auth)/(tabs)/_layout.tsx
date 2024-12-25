@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import React from "react";
 import { Tabs, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "@/components/constants/Colors";
+import { Colors } from "@/constants/Colors";
 import { useAuth } from "@clerk/clerk-react";
 import * as Haptics from "expo-haptics";
 
