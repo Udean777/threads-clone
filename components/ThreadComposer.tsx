@@ -243,16 +243,7 @@ const ThreadComposer = ({
         {/* Custom Input Accessory for Android */}
         {Platform.OS === "android" ? (
           isPreview ? null : (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 12,
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: Colors.border,
-                backgroundColor: "#f8f8f8",
-              }}
-            >
+            <View style={styles.keyboardAccessory}>
               <Text style={styles.keyboardAccessoryText}>
                 {isReply
                   ? "Everyone can reply and quote"

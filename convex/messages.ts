@@ -14,7 +14,7 @@ export const addThread = mutation({
   handler: async (context, args) => {
     const user = await getCurrentUserOrThrow(context);
 
-    return await context.db.insert("messages", {
+    const thread = await context.db.insert("messages", {
       ...args,
       userId: user._id,
       likeCount: 0,
@@ -23,8 +23,13 @@ export const addThread = mutation({
     });
 
     if (args.threadId) {
-      // TODO
+      const originalThread = await context.db.get(args.threadId);
+      await context.db.patch(args.threadId, {
+        commentCount: (originalThread?.commentCount || 0) + 1,
+      });
     }
+
+    return thread;
   },
 });
 
@@ -139,6 +144,34 @@ export const getThreadById = query({
       mediaFiles: mediaUrls,
       creator,
     };
+  },
+});
+
+export const getComments = query({
+  args: {
+    threadId: v.id("messages"),
+  },
+  handler: async (context, args) => {
+    const comments = await context.db
+      .query("messages")
+      .filter((q) => q.eq(q.field("threadId"), args.threadId))
+      .order("desc")
+      .collect();
+
+    const commentsWithMedia = await Promise.all(
+      comments.map(async (comment) => {
+        const creator = await getMessageCreator(context, comment.userId);
+        const mediaUrls = await getMediaUrls(context, comment.mediaFiles);
+
+        return {
+          ...comment,
+          mediaFiles: mediaUrls,
+          creator,
+        };
+      })
+    );
+
+    return commentsWithMedia;
   },
 });
 

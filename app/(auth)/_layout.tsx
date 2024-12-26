@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 import { router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Fonts } from "@/constants/Fonts";
 
 const AuthLayout = () => {
   return (
@@ -60,6 +61,27 @@ const AuthLayout = () => {
                 size={24}
                 color={"#fff"}
               />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Stack.Screen
+        name="(modal)/reply/[id]"
+        options={{
+          presentation: "modal",
+          title: "Reply",
+          headerTitleAlign: "center",
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.dismiss()}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontFamily: Fonts.DM_BOLD,
+                  color: "red",
+                }}
+              >
+                Cancel
+              </Text>
             </TouchableOpacity>
           ),
         }}
