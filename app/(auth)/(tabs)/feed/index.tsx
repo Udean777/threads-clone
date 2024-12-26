@@ -79,12 +79,12 @@ const Page = () => {
 
   const renderHeader = useCallback(
     () => (
-      <View style={styles.header}>
+      <View style={[styles.header, { minHeight: 200 }]}>
         <Image
           source={require("@/assets/images/threads-logo-black.png")}
           style={styles.logo}
         />
-        <ThreadComposer isPreview />
+        <ThreadComposer isPreview={true} />
       </View>
     ),
     []
@@ -123,6 +123,7 @@ const Page = () => {
   return (
     <FlatList
       data={results as any}
+      nestedScrollEnabled={true}
       keyExtractor={(item) => item._id}
       renderItem={renderItem}
       onEndReached={handleLoadMore}

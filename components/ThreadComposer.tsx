@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   Alert,
   Image,
   InputAccessoryView,
@@ -35,53 +36,81 @@ const ThreadComposer = ({
   threadId,
 }: ThreadComposerProps) => {
   const [threadContent, setThreadContent] = useState("");
-  const [mediaFiles, setMediaFiles] = useState<ImagePicker.ImagePickerAsset[]>(
-    []
-  );
+  const [mediaFiles, setMediaFiles] = useState<ImagePickerAsset[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { userPrfl } = useUserProfile();
 
   const addThread = useMutation(api.messages.addThread);
   const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
 
+  const uploadMediaThread = async (image: ImagePickerAsset) => {
+    try {
+      const uploadUrl = await generateUploadUrl();
+      if (!uploadUrl) throw new Error("Failed to generate upload URL");
+
+      const response = await fetch(image.uri);
+      if (!response.ok) throw new Error("Failed to fetch image");
+
+      const blob = await response.blob();
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": image.mimeType || "image/jpeg",
+        },
+        body: blob,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const { storageId } = await uploadResponse.json();
+      if (!storageId) throw new Error("No storage ID returned");
+
+      console.log("Successfully uploaded image:", storageId);
+      return storageId;
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      throw error;
+    }
+  };
+
   const handleSubmitThreads = async () => {
-    const mediaIds = await Promise.all(mediaFiles.map(uploadMediaThread));
-    console.log("Media images", mediaIds);
+    if (!threadContent && mediaFiles.length === 0) {
+      Alert.alert("Error", "Please add some content or media to your thread");
+      return;
+    }
 
-    addThread({
-      threadId,
-      content: threadContent,
-      mediaFiles: mediaIds,
-    });
+    setIsUploading(true);
+    setUploadError(null);
 
-    setThreadContent("");
-    setMediaFiles([]);
+    try {
+      const mediaUploads = mediaFiles.map(uploadMediaThread);
+      const mediaIds = await Promise.all(mediaUploads);
 
-    router.dismiss();
-  };
+      console.log("All media uploaded successfully:", mediaIds);
 
-  const removeThread = () => {
-    setThreadContent("");
-    setMediaFiles([]);
-  };
+      await addThread({
+        threadId,
+        content: threadContent,
+        mediaFiles: mediaIds,
+      });
 
-  const handleCancel = () => {
-    setThreadContent("");
-    Alert.alert("Discard thread?", "", [
-      {
-        text: "Discard",
-        onPress: () => router.dismiss(),
-        style: "destructive",
-      },
-      {
-        text: "Save Draft",
-        style: "cancel",
-      },
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-    ]);
+      setThreadContent("");
+      setMediaFiles([]);
+      router.dismiss();
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      setUploadError("Failed to create thread. Please try again.");
+      Alert.alert("Error", "Failed to create thread. Please try again.", [
+        { text: "OK" },
+      ]);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const pickImage = async (source: "camera" | "library") => {
@@ -108,20 +137,28 @@ const ThreadComposer = ({
     setMediaFiles(mediaFiles.filter((_, i) => i !== index));
   };
 
-  const uploadMediaThread = async (image: ImagePickerAsset) => {
-    const uploadUrl = await generateUploadUrl();
+  const removeThread = () => {
+    setThreadContent("");
+    setMediaFiles([]);
+  };
 
-    const response = await fetch(image!.uri);
-    const blob = await response.blob();
-
-    const result = await fetch(uploadUrl, {
-      method: "POST",
-      headers: { "Content-Type": image!.mimeType! },
-      body: blob,
-    });
-    const { storageId } = await result.json();
-
-    return storageId;
+  const handleCancel = () => {
+    setThreadContent("");
+    Alert.alert("Discard thread?", "", [
+      {
+        text: "Discard",
+        onPress: () => router.dismiss(),
+        style: "destructive",
+      },
+      {
+        text: "Save Draft",
+        style: "cancel",
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
   };
 
   return (
@@ -274,6 +311,15 @@ const ThreadComposer = ({
             </View>
           </InputAccessoryView>
         )}
+
+        {isUploading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={Colors.blue} />
+            <Text style={styles.loadingText}>Uploading media...</Text>
+          </View>
+        )}
+
+        {uploadError && <Text style={styles.errorText}>{uploadError}</Text>}
       </KeyboardAvoidingView>
     </TouchableOpacity>
   );
@@ -282,6 +328,28 @@ const ThreadComposer = ({
 export default ThreadComposer;
 
 const styles = StyleSheet.create({
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontFamily: Fonts.DM_REGULAR,
+    color: Colors.blue,
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginTop: 10,
+    fontFamily: Fonts.DM_REGULAR,
+  },
   cancelText: {
     fontSize: 14,
     fontFamily: Fonts.DM_BOLD,
@@ -291,26 +359,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    padding: 12,
+    padding: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: Colors.border,
+    backgroundColor: "#ffffff",
   },
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: 25,
+    borderRadius: 22,
     alignSelf: "flex-start",
+    backgroundColor: Colors.border,
   },
   username: {
     fontSize: 16,
     fontFamily: Fonts.DM_BOLD,
+    color: Colors.blue,
   },
   centerContainer: {
     flex: 1,
   },
   input: {
     fontSize: 14,
+    fontFamily: Fonts.DM_REGULAR,
+    color: "#333",
     maxHeight: 100,
+    backgroundColor: "#ffffff",
   },
   cancelButton: {
     marginLeft: 12,
@@ -319,9 +393,12 @@ const styles = StyleSheet.create({
   iconRow: {
     flexDirection: "row",
     paddingVertical: 12,
+    justifyContent: "space-between",
   },
   iconButton: {
     marginRight: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   keyboardAccessory: {
     flexDirection: "row",
@@ -329,13 +406,16 @@ const styles = StyleSheet.create({
     padding: 12,
     paddingLeft: 64,
     gap: 12,
+    backgroundColor: Colors.itemBackground,
   },
   keyboardAccessoryText: {
     flex: 1,
     color: Colors.border,
+    fontSize: 12,
+    fontFamily: Fonts.DM_REGULAR,
   },
   submitButton: {
-    backgroundColor: "#000",
+    backgroundColor: Colors.blue,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
@@ -343,6 +423,7 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 14,
   },
   mediaContainer: {
     position: "relative",
@@ -351,17 +432,18 @@ const styles = StyleSheet.create({
   },
   deleteIconContainer: {
     position: "absolute",
-    top: 15,
-    right: 15,
+    top: 5,
+    right: 5,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 12,
     padding: 4,
   },
   mediaImage: {
     width: 100,
-    height: 200,
+    height: 100,
     borderRadius: 6,
     marginRight: 10,
     marginTop: 10,
+    resizeMode: "cover",
   },
 });

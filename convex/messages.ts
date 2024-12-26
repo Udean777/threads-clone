@@ -29,13 +29,12 @@ export const addThread = mutation({
         commentCount: (originalThread?.commentCount || 0) + 1,
       });
 
-      // This method is for sending push notifications
       if (originalThread?.userId !== user._id) {
         const threadUser = await context.db.get(
           originalThread?.userId as Id<"users">
         );
-        const userWithImageUrl = await getUserWithImageUrl(context, threadUser);
-        const pushToken = userWithImageUrl?.pushToken;
+        const userWithImage = await getUserWithImageUrl(context, threadUser);
+        const pushToken = userWithImage?.pushToken;
 
         if (!pushToken) return;
 
@@ -286,10 +285,12 @@ const getMessageCreator = async (context: QueryCtx, userId: Id<"users">) => {
   return getUserWithImageUrl(context, user);
 };
 
-export const generateUploadUrl = mutation(async (context) => {
-  await getCurrentUserOrThrow(context);
+export const generateUploadUrl = mutation({
+  handler: async (context) => {
+    await getCurrentUserOrThrow(context);
 
-  return await context.storage.generateUploadUrl();
+    return await context.storage.generateUploadUrl();
+  },
 });
 
 const getMediaUrls = async (
