@@ -22,27 +22,6 @@ import { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import * as Sentry from "@sentry/react-native";
-
-const navigationIntegration = Sentry.reactNavigationIntegration();
-
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  attachScreenshot: true,
-  debug: false,
-  // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
-  // We recommend adjusting this value in production.
-  // Learn more at
-  // https://docs.sentry.io/platforms/javascript/configuration/options/#traces-sample-rate
-  _experiments: {
-    replaysOnErrorSampleRate: 1.0,
-    replaysSessionSampleRate: 1.0,
-  },
-  tracesSampleRate: 1.0,
-  profilesSampleRate: 1.0,
-  integrations: [navigationIntegration, Sentry.mobileReplayIntegration()],
-  enableNativeFramesTracking: true,
-});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -87,29 +66,10 @@ const InitialLayout = () => {
     }
   }, [isSignedIn]);
 
-  useEffect(() => {
-    if (user && user.user) {
-      Sentry.setUser({
-        email: user.user.emailAddresses[0].emailAddress,
-        id: user.user.id,
-      });
-    } else {
-      Sentry.setUser(null);
-    }
-  }, [user]);
-
   return <Slot />;
 };
 
 function RootLayout() {
-  const ref = useNavigationContainerRef();
-
-  useEffect(() => {
-    if (ref) {
-      navigationIntegration.registerNavigationContainer(ref);
-    }
-  }, [ref]);
-
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkLoaded>
@@ -121,4 +81,4 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default RootLayout;

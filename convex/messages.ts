@@ -3,6 +3,7 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 import { paginationOptsValidator } from "convex/server";
 import { Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 
 export const addThread = mutation({
   args: {
@@ -27,6 +28,27 @@ export const addThread = mutation({
       await context.db.patch(args.threadId, {
         commentCount: (originalThread?.commentCount || 0) + 1,
       });
+
+      // This method is for sending push notifications
+      if (originalThread?.userId !== user._id) {
+        const user = await context.db.get(
+          originalThread?.userId as Id<"users">
+        );
+        const pushToken = user?.pushToken;
+
+        if (!pushToken) return;
+
+        await context.scheduler.runAfter(
+          500,
+          internal.push.sendPushNotifications,
+          {
+            pushToken,
+            threadTitle: "New comment",
+            threadBody: args.content,
+            threadId: args.threadId,
+          }
+        );
+      }
     }
 
     return thread;
