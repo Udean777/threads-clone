@@ -3,8 +3,11 @@ import React from "react";
 import { router, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Fonts } from "@/constants/Fonts";
+import { usePushNotifications } from "@/hooks/usePush";
 
 const AuthLayout = () => {
+  usePushNotifications();
+
   return (
     <Stack
       screenOptions={{

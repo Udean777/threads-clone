@@ -17,7 +17,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.udean.threadsclone"
+      "package": "com.udean.threadsclone",
+       "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +48,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5edde241-e44a-446f-813c-0c9984262aeb"
+      }
     }
   }
 }
