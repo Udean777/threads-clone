@@ -5,21 +5,24 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
-import { Doc } from "@/convex/_generated/dataModel";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
 import { Fonts } from "@/constants/Fonts";
 import { Link } from "expo-router";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { ThreadProps } from "@/utils/threadType";
 
-const Thread = ({
+const Thread: React.FC<ThreadProps> = ({
   thread,
-}: {
-  thread: Doc<"messages"> & { creator: Doc<"users">; isLiked: boolean };
+  isComment = false,
+  onDeleted,
 }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteCommentMutation = useMutation(api.messages.deleteComment);
   const {
     content,
     mediaFiles,
@@ -29,7 +32,6 @@ const Thread = ({
     creator,
     isLiked,
   } = thread;
-
   const [isLoading, setIsLoading] = useState(false);
   const [localLikeCount, setLocalLikeCount] = useState(likeCount);
   const [localIsLiked, setLocalIsLiked] = useState<boolean | null>(isLiked);
@@ -56,6 +58,22 @@ const Thread = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!isComment || isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteCommentMutation({ commentId: thread._id });
+      onDeleted?.();
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const showDeleteOption = creator?._id === thread.creator._id;
+
   return (
     <View style={styles.container}>
       <Image source={{ uri: creator?.imageUrl }} style={styles.avatar} />
@@ -69,6 +87,19 @@ const Thread = ({
               {new Date(thread._creationTime).toLocaleString()}
             </Text>
           </View>
+          {showDeleteOption && isComment && (
+            <TouchableOpacity
+              onPress={handleDelete}
+              disabled={isDeleting}
+              style={{ padding: 8 }}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color={"red"} />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color={"red"} />
+              )}
+            </TouchableOpacity>
+          )}
           <Ionicons
             name="ellipsis-horizontal"
             size={24}
@@ -102,22 +133,36 @@ const Thread = ({
           >
             <Ionicons
               name={localIsLiked ? "heart" : "heart-outline"}
-              size={24}
+              size={isComment ? 20 : 24}
               color={localIsLiked ? "red" : "black"}
             />
-            <Text style={styles.actionText}>{localLikeCount}</Text>
+            <Text style={[styles.actionText, isComment && styles.commentText]}>
+              {localLikeCount}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="chatbubble-outline" size={24} color="black" />
-            <Text style={styles.actionText}>{commentCount}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="repeat-outline" size={24} color="black" />
-            <Text style={styles.actionText}>{retweetCount}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="send" size={22} color="black" />
-          </TouchableOpacity>
+          {!isComment && (
+            <>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="chatbubble-outline" size={24} color="black" />
+                <Text style={styles.actionText}>{commentCount}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Ionicons name="repeat-outline" size={24} color="black" />
+                <Text style={styles.actionText}>{retweetCount}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton}>
+                <Feather name="send" size={22} color="black" />
+              </TouchableOpacity>
+            </>
+          )}
+          {isComment && thread.repliesCount! > 0 && (
+            <TouchableOpacity style={styles.actionButton}>
+              <Text style={styles.replyCount}>
+                {thread.repliesCount}{" "}
+                {thread.repliesCount === 1 ? "reply" : "replies"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -182,6 +227,19 @@ const styles = StyleSheet.create({
   },
   actionText: {
     marginLeft: 5,
+  },
+  commentContainer: {
+    paddingLeft: 30,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: Colors.border,
+  },
+  commentText: {
+    fontSize: 12,
+  },
+  replyCount: {
+    fontSize: 12,
+    color: "#fff",
+    fontFamily: Fonts.DM_MEDIUM,
   },
 });
 

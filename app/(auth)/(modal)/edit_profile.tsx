@@ -15,7 +15,6 @@ import { Fonts } from "@/constants/Fonts";
 import { Colors } from "@/constants/Colors";
 import { ImagePickerAsset } from "expo-image-picker";
 import * as ImagePicker from "expo-image-picker";
-import * as Sentry from "@sentry/react-native";
 
 const Page = () => {
   const {
@@ -45,14 +44,6 @@ const Page = () => {
       _id: userId as Id<"users">,
       bio,
       websiteUrl: link,
-    });
-
-    Sentry.captureEvent({
-      message: "User Profile updated",
-      extra: {
-        bio,
-        link,
-      },
     });
 
     if (selectedImage) {

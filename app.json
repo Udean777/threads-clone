@@ -18,7 +18,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.udean.threadsclone",
-       "googleServicesFile": "./google-services.json"
+       "googleServicesFile": "android/app/google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -36,15 +36,7 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font",
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "MahCode",
-          "project": "threads-lite",
-          "url": "https://sentry.io/"
-        }
-      ]
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
