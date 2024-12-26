@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, QueryCtx } from "./_generated/server";
-import { getCurrentUserOrThrow } from "./users";
+import { getCurrentUserOrThrow, getUserWithImageUrl } from "./users";
 import { paginationOptsValidator } from "convex/server";
 import { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
@@ -31,10 +31,11 @@ export const addThread = mutation({
 
       // This method is for sending push notifications
       if (originalThread?.userId !== user._id) {
-        const user = await context.db.get(
+        const threadUser = await context.db.get(
           originalThread?.userId as Id<"users">
         );
-        const pushToken = user?.pushToken;
+        const userWithImageUrl = await getUserWithImageUrl(context, threadUser);
+        const pushToken = userWithImageUrl?.pushToken;
 
         if (!pushToken) return;
 
@@ -118,7 +119,7 @@ export const likeThread = mutation({
   handler: async (context, args) => {
     const user = await getCurrentUserOrThrow(context);
 
-    // Cek apakah user sudah like thread ini
+    // Check if user liked this thread
     const existingLike = await context.db
       .query("likes")
       .filter((q) => q.eq(q.field("userId"), user._id))
@@ -129,14 +130,14 @@ export const likeThread = mutation({
     if (!thread) return;
 
     if (existingLike) {
-      // Unlike: Hapus record like dan kurangi counter
+      // Unlike: Delete like record and decrease the like count
       await context.db.delete(existingLike._id);
       await context.db.patch(args.threadId, {
         likeCount: Math.max(0, (thread.likeCount || 0) - 1),
       });
       return false;
     } else {
-      // Like: Tambah record like dan tambah counter
+      // Like: Add like record and increase like count
       await context.db.insert("likes", {
         userId: user._id,
         threadId: args.threadId,
@@ -172,44 +173,117 @@ export const getThreadById = query({
 export const getComments = query({
   args: {
     threadId: v.id("messages"),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (context, args) => {
+    const currentUser = await getCurrentUserOrThrow(context);
+
     const comments = await context.db
       .query("messages")
       .filter((q) => q.eq(q.field("threadId"), args.threadId))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
-    const commentsWithMedia = await Promise.all(
-      comments.map(async (comment) => {
+    const commentsWithDetails = await Promise.all(
+      comments.page.map(async (comment) => {
         const creator = await getMessageCreator(context, comment.userId);
         const mediaUrls = await getMediaUrls(context, comment.mediaFiles);
+
+        // Check if current user liked this comment
+        let isLiked = false;
+        if (currentUser) {
+          const like = await context.db
+            .query("likes")
+            .withIndex("by_user_and_thread", (q) =>
+              q.eq("userId", currentUser._id).eq("threadId", comment._id)
+            )
+            .unique();
+          isLiked = !!like;
+        }
+
+        // Get replies count for this comment
+        const repliesCount = await context.db
+          .query("messages")
+          .filter((q) => q.eq(q.field("threadId"), comment._id))
+          .collect();
 
         return {
           ...comment,
           mediaFiles: mediaUrls,
           creator,
+          isLiked,
+          repliesCount,
         };
       })
     );
 
-    return commentsWithMedia;
+    return {
+      ...comments,
+      page: commentsWithDetails,
+    };
+  },
+});
+
+export const deleteComment = mutation({
+  args: {
+    commentId: v.id("messages"),
+  },
+  handler: async (context, args) => {
+    const user = await getCurrentUserOrThrow(context);
+
+    const comment = await context.db.get(args.commentId);
+    if (!comment) {
+      throw new Error("Comment not found");
+    }
+
+    if (comment.userId !== user._id) {
+      throw new Error("Not authorized to delete this comment");
+    }
+
+    const parentThreadId = comment.threadId;
+
+    if (parentThreadId) {
+      const parentThread = await context.db.get(
+        parentThreadId as Id<"messages">
+      );
+      if (parentThread) {
+        // Decrease comment count on parent thread
+        await context.db.patch(parentThreadId as Id<"messages">, {
+          commentCount: Math.max(0, (parentThread.commentCount || 0) - 1),
+        });
+      }
+    }
+
+    // Delete the comment's likes
+    const likes = await context.db
+      .query("likes")
+      .filter((q) => q.eq(q.field("threadId"), args.commentId))
+      .collect();
+
+    for (const like of likes) {
+      await context.db.delete(like._id);
+    }
+
+    // Delete any replies to this comment
+    const replies = await context.db
+      .query("messages")
+      .filter((q) => q.eq(q.field("threadId"), args.commentId))
+      .collect();
+
+    for (const reply of replies) {
+      await context.db.delete(reply._id);
+    }
+
+    // Delete the comment itself
+    await context.db.delete(args.commentId);
+
+    return true;
   },
 });
 
 const getMessageCreator = async (context: QueryCtx, userId: Id<"users">) => {
   const user = await context.db.get(userId);
-
-  if (!user?.imageUrl || user.imageUrl.startsWith("http")) {
-    return user;
-  }
-
-  const imgUrl = await context.storage.getUrl(user.imageUrl as Id<"_storage">);
-
-  return {
-    ...user,
-    imgUrl,
-  };
+  return getUserWithImageUrl(context, user);
 };
 
 export const generateUploadUrl = mutation(async (context) => {

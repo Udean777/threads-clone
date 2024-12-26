@@ -117,7 +117,7 @@ export const searchUserByUsername = query({
 });
 
 // Reusable method here
-const getUserWithImageUrl = async (
+export const getUserWithImageUrl = async (
   context: QueryCtx,
   user: Doc<"users"> | null
 ) => {
