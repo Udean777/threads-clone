@@ -96,6 +96,26 @@ export const updateImage = mutation({
   },
 });
 
+export const searchUserByUsername = query({
+  args: {
+    search: v.string(),
+  },
+  handler: async (context, args) => {
+    const users = await context.db
+      .query("users")
+      .withSearchIndex("searchUsers", (q) => q.search("username", args.search))
+      .collect();
+
+    const usersWithImageUrl = await Promise.all(
+      users.map(async (user) => {
+        return getUserWithImageUrl(context, user);
+      })
+    );
+
+    return usersWithImageUrl;
+  },
+});
+
 // Reusable method here
 const getUserWithImageUrl = async (
   context: QueryCtx,
